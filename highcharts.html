@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+
+print "Content-type: text/html\n\n"
+
+print """<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+
+<script src="http://code.highcharts.com/highcharts.js"></script>
+<script src="http://code.highcharts.com/modules/exporting.js"></script>
+
+<script type="text/javascript">
+jQuery.noConflict();
+</script>
+
+<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+<script type="text/javascript">
+
+
+(function($){ // encapsulate jQuery
+
+$(function () {
+    $(document).ready(function() {
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+    
+
+        var chart, temp;
+		var url = "http://10.0.1.42/cgi-bin/tempws.py?uom=F";
+        var interval = 60000;
+        $('#container').highcharts({
+            chart: {
+                type: 'spline',
+                animation: Highcharts.svg, // don't animate in old IE
+                marginRight: 10,
+                events: {
+                    load: function() {
+    
+                        // set up the updating of the chart each second
+                        var series = this.series[0];
+
+						//From: http://ngo-hung.com/blog/2012/07/19/create-a-simple-highcharts-bar-chart-with-real-time-update
+						function getData() {
+							console.log("retrieving data from server ");
+							$.getJSON(url, temp = function(data){
+		
+								series.addPoint([(new Date()).getTime(), data['temp']], true, true);
+							});
+						}
+
+                        setInterval(function() { getData(); }, interval);
+                    }
+                }
+            },
+            title: {
+                text: 'Live Temperature data from ' + url
+            },
+            xAxis: {
+                type: 'datetime',
+                tickPixelInterval: interval
+            },
+            yAxis: {
+                title: {
+                    text: 'Temperature'
+                },
+                plotLines: [{
+                    value: 0,
+                    width: 1,
+                    color: '#808080'
+                }]
+            },
+            tooltip: {
+                formatter: function() {
+                        return '<b>'+ this.series.name +'</b><br/>'+
+                        Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) +'<br/>'+
+                        Highcharts.numberFormat(this.y, 2);
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            exporting: {
+                enabled: false
+            },
+            series: [{
+                name: 'Random data',
+                data: (function() {
+                    // generate an array of random data
+                    var data = [],
+                        time = (new Date()).getTime(),
+                        i;
+    
+                    for (i = -19; i <= 0; i++) {
+                        data.push({
+                            x: time + i * 1000,
+                            y: Math.random()
+                        });
+                    }
+                    return data;
+                })()
+            }]
+        });
+    });
+    
+});
+})(jQuery);
+</script>
+"""
